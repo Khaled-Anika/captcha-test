@@ -1,5 +1,4 @@
 "use client"
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Stage, Layer, Rect, Line, Circle, Image as KonvaImage } from 'react-konva';
 import styled from 'styled-components';
@@ -16,8 +15,7 @@ const CaptchaCard = styled.div`
   background-color: white;
   border-radius: 8px;
   padding: 20px;
-  width: 90vw;
-  max-width: 600px;
+  width: 400px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 `;
 
@@ -30,8 +28,7 @@ const Title = styled.h2`
 const ImageContainer = styled.div`
   position: relative;
   width: 100%;
-  height: 60vh;
-  max-height: 500px;
+  height: 300px;
   margin-bottom: 20px;
 `;
 
@@ -70,7 +67,6 @@ const CustomCaptcha = () => {
   const [imageElement, setImageElement] = useState(null);
 
   const videoRef = useRef(null);
-  const containerRef = useRef(null);
 
   useEffect(() => {
     if (step === 1) {
@@ -98,14 +94,11 @@ const CustomCaptcha = () => {
   };
 
   const updateSquarePosition = () => {
-    if (containerRef.current) {
-      const containerWidth = containerRef.current.offsetWidth;
-      const containerHeight = containerRef.current.offsetHeight;
-      const squareSize = Math.min(containerWidth, containerHeight) * 0.5;
-      const x = Math.random() * (containerWidth - squareSize);
-      const y = Math.random() * (containerHeight - squareSize);
-      setSquarePosition({ x, y, size: squareSize });
-    }
+    const videoWidth = videoRef.current?.videoWidth || 360;
+    const videoHeight = videoRef.current?.videoHeight || 300;
+    const x = Math.random() * (videoWidth - 100);
+    const y = Math.random() * (videoHeight - 100);
+    setSquarePosition({ x, y });
   };
 
   const handleContinue = () => {
@@ -124,50 +117,43 @@ const CustomCaptcha = () => {
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageDataUrl = canvas.toDataURL('image/png');
     setCapturedImage(imageDataUrl);
-  
+
     const img = new Image();
     img.src = imageDataUrl;
     img.onload = () => {
       setImageElement(img);
-      generateSectors(img.width, img.height);
     };
+
+    generateSectors();
   };
 
-  const generateSectors = (width, height) => {
+  const generateSectors = () => {
+    const sectorSize = 25;
     const sectorsPerRow = 4;
     const sectorsPerColumn = 4;
-    const totalSectors = sectorsPerRow * sectorsPerColumn;
-    const sectorWidth = width / sectorsPerRow;
-    const sectorHeight = height / sectorsPerColumn;
     const generatedSectors = [];
-  
-    for (let i = 0; i < totalSectors; i++) {
+
+    for (let i = 0; i < sectorsPerRow * sectorsPerColumn; i++) {
       const row = Math.floor(i / sectorsPerRow);
       const col = i % sectorsPerRow;
+      const shape = Math.random() < 0.5 ? getRandomShape() : null;
       generatedSectors.push({
         id: i,
-        x: col * sectorWidth,
-        y: row * sectorHeight,
-        width: sectorWidth,
-        height: sectorHeight,
-        shape: null,
+        x: squarePosition.x + col * sectorSize,
+        y: squarePosition.y + row * sectorSize,
+        shape,
       });
     }
-  
-    // Assign shapes to half of the sectors
-    const shapesToAssign = Math.floor(totalSectors / 2);
-    const shapes = ['triangle', 'square', 'circle'];
-    for (let i = 0; i < shapesToAssign; i++) {
-      let randomIndex;
-      do {
-        randomIndex = Math.floor(Math.random() * totalSectors);
-      } while (generatedSectors[randomIndex].shape !== null);
-      generatedSectors[randomIndex].shape = shapes[Math.floor(Math.random() * shapes.length)];
-    }
-  
+    console.log('generatedSectors', generatedSectors)
     setSectors(generatedSectors);
-    setSelectedShape(shapes[Math.floor(Math.random() * shapes.length)]);
+    setSelectedShape(getRandomShape());
   };
+
+  const getRandomShape = () => {
+    const shapes = ['triangle', 'square', 'circle'];
+    return shapes[Math.floor(Math.random() * shapes.length)];
+  };
+
   const handleSectorClick = (sectorId) => {
     setUserSelection((prev) =>
       prev.includes(sectorId)
@@ -177,25 +163,28 @@ const CustomCaptcha = () => {
   };
 
   const handleValidate = () => {
+    console.log('generatedSectors', sectors, selectedShape)
     const correctSectors = sectors.filter((sector) => sector.shape === selectedShape);
+    console.log('correct', correctSectors, userSelection.length);
     const isValid = userSelection.length === correctSectors.length &&
       userSelection.every((id) => correctSectors.some((sector) => sector.id === id));
     setValidationResult(isValid);
     setStep(3);
   };
 
+
   const renderStep1 = () => (
     <CaptchaContainer>
       <CaptchaCard>
         <Title>Take Selfie</Title>
-        <ImageContainer ref={containerRef}>
+        <ImageContainer>
           <Video ref={videoRef} autoPlay playsInline />
           <SquareOverlay
             style={{
               left: squarePosition.x,
               top: squarePosition.y,
-              width: squarePosition.size,
-              height: squarePosition.size,
+              width: 100,
+              height: 100,
             }}
           />
         </ImageContainer>
@@ -209,55 +198,52 @@ const CustomCaptcha = () => {
       <CaptchaCard>
         <Title>Select {selectedShape}s</Title>
         <ImageContainer>
-          {imageElement && (
-            <Stage width={imageElement.width} height={imageElement.height}>
-              <Layer>
-                <KonvaImage image={imageElement} />
-                {sectors.map((sector) => (
-                  <React.Fragment key={sector.id}>
-                    <Rect
-                      x={sector.x}
-                      y={sector.y}
-                      width={sector.width}
-                      height={sector.height}
-                      stroke="white"
-                      strokeWidth={1}
-                      onClick={() => handleSectorClick(sector.id)}
-                      fill={userSelection.includes(sector.id) ? 'rgba(255, 255, 255, 0.5)' : 'transparent'}
+          <Stage width={360} height={300}>
+            <Layer>
+              {imageElement && (
+                <KonvaImage
+                  image={imageElement}
+                  width={360}
+                  height={300}
+                />
+              )}
+              <Rect
+                x={squarePosition.x}
+                y={squarePosition.y}
+                width={100}
+                height={100}
+                stroke="white"
+                strokeWidth={2}
+              />
+              {sectors.map((sector) => (
+                <React.Fragment key={sector.id}>
+                  <Rect
+                    x={sector.x}
+                    y={sector.y}
+                    width={25}
+                    height={25}
+                    stroke="white"
+                    strokeWidth={1}
+                    onClick={() => handleSectorClick(sector.id)}
+                    fill={userSelection.includes(sector.id) ? 'rgba(255, 255, 255, 0.5)' : 'transparent'}
+                  />
+                  {sector.shape === 'circle' && (
+                    <Circle x={sector.x + 12.5} y={sector.y + 12.5} radius={10} fill="white" />
+                  )}
+                  {sector.shape === 'square' && (
+                    <Rect x={sector.x + 5} y={sector.y + 5} width={15} height={15} fill="white" />
+                  )}
+                  {sector.shape === 'triangle' && (
+                    <Line
+                      points={[sector.x + 12.5, sector.y + 5, sector.x + 5, sector.y + 20, sector.x + 20, sector.y + 20]}
+                      closed
+                      fill="white"
                     />
-                    {sector.shape === 'triangle' && (
-                      <Line
-                        points={[
-                          sector.x + sector.width / 2, sector.y,
-                          sector.x, sector.y + sector.height,
-                          sector.x + sector.width, sector.y + sector.height
-                        ]}
-                        closed
-                        fill="white"
-                      />
-                    )}
-                    {sector.shape === 'square' && (
-                      <Rect
-                        x={sector.x + sector.width / 4}
-                        y={sector.y + sector.height / 4}
-                        width={sector.width / 2}
-                        height={sector.height / 2}
-                        fill="white"
-                      />
-                    )}
-                    {sector.shape === 'circle' && (
-                      <Circle
-                        x={sector.x + sector.width / 2}
-                        y={sector.y + sector.height / 2}
-                        radius={Math.min(sector.width, sector.height) / 4}
-                        fill="white"
-                      />
-                    )}
-                  </React.Fragment>
-                ))}
-              </Layer>
-            </Stage>
-          )}
+                  )}
+                </React.Fragment>
+              ))}
+            </Layer>
+          </Stage>
         </ImageContainer>
         <Button onClick={handleValidate}>VALIDATE</Button>
       </CaptchaCard>
