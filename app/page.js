@@ -94,11 +94,12 @@ const CustomCaptcha = () => {
   };
 
   const updateSquarePosition = () => {
-    const videoWidth = videoRef.current?.videoWidth || 360;
-    const videoHeight = videoRef.current?.videoHeight || 300;
-    const x = Math.random() * (videoWidth - 100);
-    const y = Math.random() * (videoHeight - 100);
-    setSquarePosition({ x, y });
+    const videoWidth = videoRef.current?.offsetWidth || 360;
+    const videoHeight = videoRef.current?.offsetHeight || 300;
+    const squareSize = Math.min(videoWidth, videoHeight) * 0.5;
+    const x = Math.random() * (videoWidth - squareSize);
+    const y = Math.random() * (videoHeight - squareSize);
+    setSquarePosition({ x, y, size: squareSize });
   };
 
   const handleContinue = () => {
@@ -128,7 +129,7 @@ const CustomCaptcha = () => {
   };
 
   const generateSectors = () => {
-    const sectorSize = 25;
+    const sectorSize = 30;
     const sectorsPerRow = 4;
     const sectorsPerColumn = 4;
     const generatedSectors = [];
@@ -183,8 +184,8 @@ const CustomCaptcha = () => {
             style={{
               left: squarePosition.x,
               top: squarePosition.y,
-              width: 100,
-              height: 100,
+              width: 120,
+              height: 120,
             }}
           />
         </ImageContainer>
@@ -210,8 +211,8 @@ const CustomCaptcha = () => {
               <Rect
                 x={squarePosition.x}
                 y={squarePosition.y}
-                width={100}
-                height={100}
+                width={120}
+                height={120}
                 stroke="white"
                 strokeWidth={2}
               />
@@ -220,8 +221,8 @@ const CustomCaptcha = () => {
                   <Rect
                     x={sector.x}
                     y={sector.y}
-                    width={25}
-                    height={25}
+                    width={30}
+                    height={30}
                     stroke="white"
                     strokeWidth={1}
                     onClick={() => handleSectorClick(sector.id)}
@@ -253,7 +254,7 @@ const CustomCaptcha = () => {
   const renderStep3 = () => (
     <CaptchaContainer>
       <CaptchaCard>
-        <Title>{validationResult ? 'CAPTCHA Passed' : 'CAPTCHA Failed'}</Title>
+        <Title style={{marginBottom: 0}}>{validationResult ? 'CAPTCHA Passed' : 'CAPTCHA Failed'}</Title>
       </CaptchaCard>
     </CaptchaContainer>
   );
