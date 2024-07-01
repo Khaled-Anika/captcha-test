@@ -65,6 +65,8 @@ const CustomCaptcha = () => {
   const [userSelection, setUserSelection] = useState([]);
   const [validationResult, setValidationResult] = useState(null);
   const [imageElement, setImageElement] = useState(null);
+  const [startTime, setStartTime] = useState(null);
+
 
   const videoRef = useRef(null);
 
@@ -78,6 +80,9 @@ const CustomCaptcha = () => {
     if (step === 1) {
       const interval = setInterval(updateSquarePosition, 1000);
       return () => clearInterval(interval);
+    }
+    if (step === 2) {
+      setStartTime(Date.now());
     }
   }, [step]);
 
@@ -164,12 +169,16 @@ const CustomCaptcha = () => {
   };
 
   const handleValidate = () => {
-    console.log('generatedSectors', sectors, selectedShape)
-    const correctSectors = sectors.filter((sector) => sector.shape === selectedShape);
-    console.log('correct', correctSectors, userSelection.length);
-    const isValid = userSelection.length === correctSectors.length &&
-      userSelection.every((id) => correctSectors.some((sector) => sector.id === id));
-    setValidationResult(isValid);
+    const solveTime = Date.now() - startTime;
+
+    if (solveTime < 2000 || solveTime > 20000) {
+      setValidationResult(false);
+    } else {
+      const correctSectors = sectors.filter((sector) => sector.shape === selectedShape);
+      const isValid = userSelection.length === correctSectors.length &&
+        userSelection.every((id) => correctSectors.some((sector) => sector.id === id));
+      setValidationResult(isValid);
+    }
     setStep(3);
   };
 
