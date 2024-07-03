@@ -113,6 +113,20 @@ const CustomCaptcha = () => {
     }
   };
 
+  const applyImageDistortion = (canvas) => {
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    console.log('data', data);
+    for (let i = 0; i < data.length; i += 4) {
+      const noise = Math.random() * 20 - 10;
+      data[i] = Math.max(0, Math.min(255, data[i] + noise));     // Red
+      data[i+1] = Math.max(0, Math.min(255, data[i+1] + noise)); // Green
+      data[i+2] = Math.max(0, Math.min(255, data[i+2] + noise)); // Blue
+    }
+    ctx.putImageData(imageData, 0, 0);
+  };
+
   const captureImage = () => {
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
@@ -125,6 +139,9 @@ const CustomCaptcha = () => {
 
     const context = canvas.getContext('2d');
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Apply distortion
+    applyImageDistortion(canvas);
     
     const imageDataUrl = canvas.toDataURL('image/png');
     setCapturedImage(imageDataUrl);
