@@ -27,8 +27,6 @@ const Title = styled.h2`
 
 const ImageContainer = styled.div`
   position: relative;
-  width: 100%;
-  height: 300px;
   margin-bottom: 20px;
 `;
 
@@ -66,6 +64,7 @@ const CustomCaptcha = () => {
   const [validationResult, setValidationResult] = useState(null);
   const [imageElement, setImageElement] = useState(null);
   const [startTime, setStartTime] = useState(null);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
 
 
   const videoRef = useRef(null);
@@ -117,12 +116,19 @@ const CustomCaptcha = () => {
   const captureImage = () => {
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const aspectRatio = video.videoWidth / video.videoHeight;
+    const width = video.offsetWidth;
+    const height = width / aspectRatio;
+  
+    canvas.width = width;
+    canvas.height = height;
+
     const context = canvas.getContext('2d');
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
     const imageDataUrl = canvas.toDataURL('image/png');
     setCapturedImage(imageDataUrl);
+    setImageDimensions({ width, height });
 
     const img = new Image();
     img.src = imageDataUrl;
@@ -150,7 +156,6 @@ const CustomCaptcha = () => {
         shape,
       });
     }
-    console.log('generatedSectors', generatedSectors)
     setSectors(generatedSectors);
     setSelectedShape(getRandomShape());
   };
@@ -208,13 +213,13 @@ const CustomCaptcha = () => {
       <CaptchaCard>
         <Title>Select {selectedShape}s</Title>
         <ImageContainer>
-          <Stage width={360} height={300}>
+          <Stage width={imageDimensions.width} height={imageDimensions.height}>
             <Layer>
               {imageElement && (
                 <KonvaImage
                   image={imageElement}
-                  width={360}
-                  height={300}
+                  width={imageDimensions.width}
+                  height={imageDimensions.height}
                 />
               )}
               <Rect
