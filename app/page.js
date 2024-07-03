@@ -60,6 +60,7 @@ const CustomCaptcha = () => {
   const [squarePosition, setSquarePosition] = useState({ x: 0, y: 0 });
   const [sectors, setSectors] = useState([]);
   const [selectedShape, setSelectedShape] = useState(null);
+  const [selectedColor, setSelectedColor] = useState(null);
   const [userSelection, setUserSelection] = useState([]);
   const [validationResult, setValidationResult] = useState(null);
   const [imageElement, setImageElement] = useState(null);
@@ -156,6 +157,16 @@ const CustomCaptcha = () => {
     generateSectors();
   };
 
+  const getRandomColor = () => {
+    const colors = ['red', 'green', 'blue'];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  const getRandomShape = () => {
+    const shapes = ['triangle', 'square', 'circle'];
+    return shapes[Math.floor(Math.random() * shapes.length)];
+  };
+
   const generateSectors = () => {
     const sectorSize = 30;
     const sectorsPerRow = 4;
@@ -166,20 +177,19 @@ const CustomCaptcha = () => {
       const row = Math.floor(i / sectorsPerRow);
       const col = i % sectorsPerRow;
       const shape = Math.random() < 0.5 ? getRandomShape() : null;
+      const color = shape ? getRandomColor() : null;
       generatedSectors.push({
         id: i,
         x: squarePosition.x + col * sectorSize,
         y: squarePosition.y + row * sectorSize,
         shape,
+        color,
       });
     }
     setSectors(generatedSectors);
-    setSelectedShape(getRandomShape());
-  };
-
-  const getRandomShape = () => {
-    const shapes = ['triangle', 'square', 'circle'];
-    return shapes[Math.floor(Math.random() * shapes.length)];
+    const randomSector = generatedSectors.find(sector => sector.shape && sector.color);
+    setSelectedShape(randomSector.shape);
+    setSelectedColor(randomSector.color);
   };
 
   const handleSectorClick = (sectorId) => {
@@ -193,11 +203,12 @@ const CustomCaptcha = () => {
   const handleValidate = () => {
     const solveTime = Date.now() - startTime;
 
-    // Apply time-limit to prevent brute-force attempts
     if (solveTime < 2000 || solveTime > 20000) {
       setValidationResult(false);
     } else {
-      const correctSectors = sectors.filter((sector) => sector.shape === selectedShape);
+      const correctSectors = sectors.filter((sector) => 
+        sector.shape === selectedShape && sector.color === selectedColor
+      );
       const isValid = userSelection.length === correctSectors.length &&
         userSelection.every((id) => correctSectors.some((sector) => sector.id === id));
       setValidationResult(isValid);
@@ -229,7 +240,7 @@ const CustomCaptcha = () => {
   const renderStep2 = () => (
     <CaptchaContainer>
       <CaptchaCard>
-        <Title>Select {selectedShape}s</Title>
+        <Title>Select {selectedColor} {selectedShape}s</Title>
         <ImageContainer>
           <Stage width={imageDimensions.width} height={imageDimensions.height}>
             <Layer>
@@ -261,16 +272,16 @@ const CustomCaptcha = () => {
                     fill={userSelection.includes(sector.id) ? 'rgba(255, 255, 255, 0.5)' : 'transparent'}
                   />
                   {sector.shape === 'circle' && (
-                    <Circle x={sector.x + 12.5} y={sector.y + 12.5} radius={10} fill="white" />
+                    <Circle x={sector.x + 15} y={sector.y + 15} radius={10} fill={sector.color} />
                   )}
                   {sector.shape === 'square' && (
-                    <Rect x={sector.x + 5} y={sector.y + 5} width={15} height={15} fill="white" />
+                    <Rect x={sector.x + 5} y={sector.y + 5} width={20} height={20} fill={sector.color} />
                   )}
                   {sector.shape === 'triangle' && (
                     <Line
-                      points={[sector.x + 12.5, sector.y + 5, sector.x + 5, sector.y + 20, sector.x + 20, sector.y + 20]}
+                      points={[sector.x + 15, sector.y + 5, sector.x + 5, sector.y + 25, sector.x + 25, sector.y + 25]}
                       closed
-                      fill="white"
+                      fill={sector.color}
                     />
                   )}
                 </React.Fragment>
