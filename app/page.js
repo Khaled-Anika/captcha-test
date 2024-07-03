@@ -193,6 +193,7 @@ const CustomCaptcha = () => {
   const handleValidate = () => {
     const solveTime = Date.now() - startTime;
 
+    // Apply time-limit to prevent brute-force attempts
     if (solveTime < 2000 || solveTime > 20000) {
       setValidationResult(false);
     } else {
