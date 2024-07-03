@@ -216,8 +216,8 @@ const CustomCaptcha = () => {
             }}
           />
         </ImageContainer>
-        <Button onClick={handleContinue}>CONTINUE</Button>
-      </CaptchaCard>
+        <Button role='button' onClick={handleContinue}>CONTINUE</Button>
+      </CaptchaCard>Continue
     </CaptchaContainer>
   );
 
@@ -274,7 +274,7 @@ const CustomCaptcha = () => {
             </Layer>
           </Stage>
         </ImageContainer>
-        <Button onClick={handleValidate}>VALIDATE</Button>
+        <Button role='button' onClick={handleValidate}>VALIDATE</Button>
       </CaptchaCard>
     </CaptchaContainer>
   );
