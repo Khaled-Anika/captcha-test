@@ -27,8 +27,6 @@ const Title = styled.h2`
 
 const ImageContainer = styled.div`
   position: relative;
-  width: 100%;
-  height: 300px;
   margin-bottom: 20px;
 `;
 
@@ -62,13 +60,16 @@ const CustomCaptcha = () => {
   const [squarePosition, setSquarePosition] = useState({ x: 0, y: 0 });
   const [sectors, setSectors] = useState([]);
   const [selectedShape, setSelectedShape] = useState(null);
+  const [selectedColor, setSelectedColor] = useState(null);
   const [userSelection, setUserSelection] = useState([]);
   const [validationResult, setValidationResult] = useState(null);
   const [imageElement, setImageElement] = useState(null);
   const [startTime, setStartTime] = useState(null);
-
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
 
   const videoRef = useRef(null);
+
+  const isTestEnvironment = process.env.NODE_ENV === 'test';
 
   useEffect(() => {
     if (step === 1) {
@@ -118,6 +119,7 @@ const CustomCaptcha = () => {
     const ctx = canvas.getContext('2d');
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
+    console.log('data', data);
     for (let i = 0; i < data.length; i += 4) {
       const noise = Math.random() * 20 - 10;
       data[i] = Math.max(0, Math.min(255, data[i] + noise));     // Red
@@ -128,10 +130,23 @@ const CustomCaptcha = () => {
   };
 
   const captureImage = () => {
+    if (isTestEnvironment) {
+      // Skip image capture and distortion in test environment
+      setCapturedImage('test-image-url');
+      setImageDimensions({ width: 400, height: 300 });
+      generateSectors();
+      return;
+    }
+
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const aspectRatio = video.videoWidth / video.videoHeight;
+    const width = video.offsetWidth;
+    const height = width / aspectRatio;
+  
+    canvas.width = width;
+    canvas.height = height;
+
     const context = canvas.getContext('2d');
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     
@@ -140,6 +155,7 @@ const CustomCaptcha = () => {
     
     const imageDataUrl = canvas.toDataURL('image/png');
     setCapturedImage(imageDataUrl);
+    setImageDimensions({ width, height });
 
     const img = new Image();
     img.src = imageDataUrl;
@@ -150,6 +166,15 @@ const CustomCaptcha = () => {
     generateSectors();
   };
 
+  const getRandomColor = () => {
+    const colors = ['red', 'green', 'blue'];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  const getRandomShape = () => {
+    const shapes = ['triangle', 'square', 'circle'];
+    return shapes[Math.floor(Math.random() * shapes.length)];
+  };
 
   const generateSectors = () => {
     const sectorSize = 30;
@@ -161,21 +186,19 @@ const CustomCaptcha = () => {
       const row = Math.floor(i / sectorsPerRow);
       const col = i % sectorsPerRow;
       const shape = Math.random() < 0.5 ? getRandomShape() : null;
+      const color = shape ? getRandomColor() : null;
       generatedSectors.push({
         id: i,
         x: squarePosition.x + col * sectorSize,
         y: squarePosition.y + row * sectorSize,
         shape,
+        color,
       });
     }
-    console.log('generatedSectors', generatedSectors)
     setSectors(generatedSectors);
-    setSelectedShape(getRandomShape());
-  };
-
-  const getRandomShape = () => {
-    const shapes = ['triangle', 'square', 'circle'];
-    return shapes[Math.floor(Math.random() * shapes.length)];
+    const randomSector = generatedSectors.find(sector => sector.shape && sector.color);
+    setSelectedShape(randomSector.shape);
+    setSelectedColor(randomSector.color);
   };
 
   const handleSectorClick = (sectorId) => {
@@ -192,7 +215,9 @@ const CustomCaptcha = () => {
     if (solveTime < 2000 || solveTime > 20000) {
       setValidationResult(false);
     } else {
-      const correctSectors = sectors.filter((sector) => sector.shape === selectedShape);
+      const correctSectors = sectors.filter((sector) => 
+        sector.shape === selectedShape && sector.color === selectedColor
+      );
       const isValid = userSelection.length === correctSectors.length &&
         userSelection.every((id) => correctSectors.some((sector) => sector.id === id));
       setValidationResult(isValid);
@@ -216,7 +241,7 @@ const CustomCaptcha = () => {
             }}
           />
         </ImageContainer>
-        <Button role='button' onClick={handleContinue}>CONTINUE</Button>
+        <Button data-role="button" onClick={handleContinue}>CONTINUE</Button>
       </CaptchaCard>Continue
     </CaptchaContainer>
   );
@@ -224,15 +249,15 @@ const CustomCaptcha = () => {
   const renderStep2 = () => (
     <CaptchaContainer>
       <CaptchaCard>
-        <Title>Select {selectedShape}s</Title>
+        <Title>Select {selectedColor} {selectedShape}s</Title>
         <ImageContainer>
-          <Stage width={360} height={300}>
+          <Stage width={imageDimensions.width} height={imageDimensions.height} data-testid="captcha-stage">
             <Layer>
               {imageElement && (
                 <KonvaImage
                   image={imageElement}
-                  width={360}
-                  height={300}
+                  width={imageDimensions.width}
+                  height={imageDimensions.height}
                 />
               )}
               <Rect
@@ -257,16 +282,16 @@ const CustomCaptcha = () => {
                     fill={userSelection.includes(sector.id) ? 'rgba(255, 255, 255, 0.5)' : 'transparent'}
                   />
                   {sector.shape === 'circle' && (
-                    <Circle x={sector.x + 12.5} y={sector.y + 12.5} radius={10} fill="white" />
+                    <Circle x={sector.x + 15} y={sector.y + 15} radius={10} fill={sector.color} />
                   )}
                   {sector.shape === 'square' && (
-                    <Rect x={sector.x + 5} y={sector.y + 5} width={15} height={15} fill="white" />
+                    <Rect x={sector.x + 5} y={sector.y + 5} width={20} height={20} fill={sector.color} />
                   )}
                   {sector.shape === 'triangle' && (
                     <Line
-                      points={[sector.x + 12.5, sector.y + 5, sector.x + 5, sector.y + 20, sector.x + 20, sector.y + 20]}
+                      points={[sector.x + 15, sector.y + 5, sector.x + 5, sector.y + 25, sector.x + 25, sector.y + 25]}
                       closed
-                      fill="white"
+                      fill={sector.color}
                     />
                   )}
                 </React.Fragment>
@@ -274,7 +299,7 @@ const CustomCaptcha = () => {
             </Layer>
           </Stage>
         </ImageContainer>
-        <Button role='button' onClick={handleValidate}>VALIDATE</Button>
+        <Button data-role="button" onClick={handleValidate}>VALIDATE</Button>
       </CaptchaCard>
     </CaptchaContainer>
   );

@@ -3,6 +3,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import CustomCaptcha from './page';
 
+// Mock react-konva
+jest.mock('react-konva');
+
 // Mock the getUserMedia function
 Object.defineProperty(global.navigator, 'mediaDevices', {
   value: {
@@ -15,6 +18,15 @@ Object.defineProperty(global.navigator, 'mediaDevices', {
     ),
   },
 });
+
+// Mock Image
+global.Image = class {
+  constructor() {
+    setTimeout(() => {
+      this.onload();
+    }, 100);
+  }
+};
 
 describe('CustomCaptcha', () => {
   beforeEach(() => {
@@ -49,8 +61,7 @@ describe('CustomCaptcha', () => {
     fireEvent.click(screen.getByRole('button', { name: 'CONTINUE' }));
     
     await waitFor(() => {
-      const canvas = screen.getByRole('img');
-      expect(canvas).toBeInTheDocument();
+      expect(screen.getByTestId('captcha-stage')).toBeInTheDocument();
     });
   });
 
@@ -60,8 +71,9 @@ describe('CustomCaptcha', () => {
     fireEvent.click(screen.getByRole('button', { name: 'CONTINUE' }));
     
     await waitFor(() => {
-      const canvas = screen.getByRole('img');
-      fireEvent.click(canvas, { clientX: 50, clientY: 50 });
+      const stage = screen.getByTestId('captcha-stage');
+      expect(stage).toBeInTheDocument();
+      fireEvent.click(stage);
     });
   });
 
