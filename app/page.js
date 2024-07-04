@@ -119,7 +119,7 @@ const CustomCaptcha = () => {
     const ctx = canvas.getContext('2d');
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
-    console.log('data', data);
+    
     for (let i = 0; i < data.length; i += 4) {
       const noise = Math.random() * 20 - 10;
       data[i] = Math.max(0, Math.min(255, data[i] + noise));     // Red
@@ -242,7 +242,7 @@ const CustomCaptcha = () => {
           />
         </ImageContainer>
         <Button data-role="button" onClick={handleContinue}>CONTINUE</Button>
-      </CaptchaCard>Continue
+      </CaptchaCard>
     </CaptchaContainer>
   );
 
