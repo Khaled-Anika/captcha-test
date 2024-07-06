@@ -66,6 +66,8 @@ const CustomCaptcha = () => {
   const [imageElement, setImageElement] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const [attempts, setAttempts] = useState(0);
+  const [blocked, setBlocked] = useState(false);
 
   const videoRef = useRef(null);
 
@@ -211,6 +213,7 @@ const CustomCaptcha = () => {
 
   const handleValidate = () => {
     const solveTime = Date.now() - startTime;
+    let isValid = false;
 
     if (solveTime < 2000 || solveTime > 20000) {
       setValidationResult(false);
@@ -218,13 +221,30 @@ const CustomCaptcha = () => {
       const correctSectors = sectors.filter((sector) => 
         sector.shape === selectedShape && sector.color === selectedColor
       );
-      const isValid = userSelection.length === correctSectors.length &&
+      isValid = userSelection.length === correctSectors.length &&
         userSelection.every((id) => correctSectors.some((sector) => sector.id === id));
       setValidationResult(isValid);
     }
+
+    if (!isValid) {
+      setAttempts(attempts + 1);
+      if (attempts >= 2) {
+        setBlocked(true);
+      }
+    }
+
     setStep(3);
   };
 
+  const handleRetry = () => {
+    if (blocked) {
+      return;
+    }
+    setStep(1);
+    setUserSelection([]);
+    setValidationResult(null);
+    setStartTime(null);
+  };
 
   const renderStep1 = () => (
     <CaptchaContainer>
@@ -308,6 +328,12 @@ const CustomCaptcha = () => {
     <CaptchaContainer>
       <CaptchaCard>
         <Title style={{marginBottom: 0}}>{validationResult ? 'CAPTCHA Passed' : 'CAPTCHA Failed'}</Title>
+        {!validationResult && !blocked && (
+          <Button data-role="button" className='common-margin' onClick={handleRetry}>RETRY</Button>
+        )}
+        {blocked && (
+          <p className='common-margin block-text'>You have been blocked from further attempts.</p>
+        )}
       </CaptchaCard>
     </CaptchaContainer>
   );
