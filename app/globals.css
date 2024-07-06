@@ -100,6 +100,14 @@ a {
   text-decoration: none;
 }
 
+.common-margin {
+  margin-top: 5px;
+}
+
+.block-text {
+  color: red;
+}
+
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
