@@ -4,11 +4,11 @@ This is a NextJS (App Router) project bootstrapped with [`create-next-app`](http
 
 Before getting started with the project, ensure that you have the following installed:
 
-- Node.js (v21)
-- Yarn package manager
+- Node.js
+- Npm package manager
 
 > [!NOTE]
-> This project has been tested with Node v21.6.2.
+> This project has been tested with Node **v21.6.2**.
 
 ## Getting Started
 
@@ -29,13 +29,13 @@ To set up the project on your local machine, follow these steps:
 3. Install the dependencies:
 
    ```bash
-   yarn install
+   npm install
    ```
 
 4. Start the development server:
 
    ```bash
-   yarn dev
+   npm run dev
    ```
 
 5. Open your browser and visit `http://localhost:3000` to see the application running.
